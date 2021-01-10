@@ -5,11 +5,16 @@ for(let i=1; i<=9; i++){
         //document.getElementById("p"+i).addEventListener("click",function(){xo(i-1)});
     
     //Mode 2 : AI imbattable | Pas encore au point
-        //document.getElementById("p"+i).addEventListener("click",function(){play(i)});
+        document.getElementById("p"+i).addEventListener("click",function(){play(i)});
     
     //Mode 3 : AI aléatoire facile
-        document.getElementById("p"+i).addEventListener("click",function(){playRandom(i);});
-    }
+        //document.getElementById("p"+i).addEventListener("click",function(){playRandom(i);});
+}
+
+//Boutton Reset
+document.getElementById("button").addEventListener("click", function(){
+    reset();
+})
 
 // Code pour deux joueurs
 
@@ -45,19 +50,13 @@ function displayWinner(){
         alert("Winner is "+winner);
         reset();
     }else if(playablePositions(board)==0){
-        alert("Draw game ...")
+        alert("Draw game ...");
         reset();
     }
 }
 
-//Boutton Reset
-document.getElementById("button").addEventListener("click", function(){
-    reset();
-})
-
 //Remettre la matrice à zero et la dessiner sur HTML
 function reset(){
-    alert("Reset ..."); 
     board = [...zero];
     drawBoard(); 
     logMsg="Log : <br><br>";
@@ -86,11 +85,13 @@ function play(i){
     
     let winner = checkWinner(board);
 
+    log(playablePositions(board).join(" - "));
     if(winner == 0){
         let run = mm(board,"O");
         board[run.position]="O";
-        alert("Minimax chose position : "+run.position);
+        log(run.position);
     }
+    log(playablePositions(board).join(" - "));
     drawBoard();
     displayWinner();
 }
@@ -100,22 +101,24 @@ function mm(checkBoard, player){
     let results = [];
     let winner = checkWinner(checkBoard);
     let playable = playablePositions(checkBoard);
+    let workBoard = [...checkBoard]; // ERROR 2 FIXED : make a copy of checkboard so it doesn't get altered (by value not by ref)
 
-    //Condition de fin
+    //Condition de fin - ERROR 1 FIXED : return object {position:0,score:10} instead of only the value of the score (10)
     if(playable.length == 0 || winner!=0)
         switch(winner){
             case "O":
-                return 10;
+                return {position:0,score:10};
             case "X":
-                return -10;
+                return {position:0,score:-10};
             default:
-                return 0;
+                return {position:0,score:0};
         }
     else{
-        //Sinon, calculer le score de chaque case vide par appel de minimax - Récursivité se passe ici
+        //Sinon, calculer le score de chaque case vide par appel de minimax
         for(let i=0;i<playable.length;i++){
-            checkBoard[playable[i]]=player;
-            results.push({position:i,score:mm(checkBoard, otherPlayer(player)).score});
+            workBoard[playable[i]]=player;
+            log("Testing position "+playable[i]+" for "+player);
+            results.push({position:playable[i],score:mm(workBoard, (player=="X")? "O":"X").score}); // ERROR 3 FIXED : position:playable[i] instead of position:i
         }
 
         //Aprés avoir collecté les scores, retourner le min si c'est le tour de l'humain sinon le max
@@ -133,16 +136,18 @@ function min(results){
         if(results[i].score < min.score)
             min = results[i];
     
+    log(results.map((item)=>item.score).join(" * ") + " | min = "+min.score);
     return min;
 }
 
 function max(results){
     let max = results[0];
-
-    for(let i=0;i<results.length;i++)
-        if(results[i].score > max.score)
-            max = results[i];
     
+    for(let i=0;i<results.length;i++)
+    if(results[i].score > max.score)
+    max = results[i];
+    
+    log(results.map((item)=>item.score).join(" * ") + " | max = "+max.score);
     return max;
 }
 
@@ -190,7 +195,7 @@ function checkWinner(checkBoard){
 //Affiche sur la grille de cellules <p>
 function drawBoard(){
     for(let i=1;i<=9;i++){
-        document.getElementById("p"+i).innerHTML =board[i-1]==0 ? "":board[i-1];
+        document.getElementById("p"+i).innerHTML = board[i-1]==0 ? "":board[i-1];
     }
 }
 
